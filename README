@@ -1,0 +1,23 @@
+This is a really old coroutine library I wrote for a collaborative EC
+project named REX in the early 1990s.
+
+Back in those days, there wasn't really any such thing as native threads
+on Unix and this was a primitive way of achieving that. In fact it was
+sufficient to implement an actor-style of message-passing which made
+concurrent programming very simple and easily comprehensible to students.
+
+This code was lost (by me) when I left Imperial College in the late 1990s.
+Thanks to the power of Google, I discovered that it was available in at
+least one place on the web --- as part of Berkeley's pSather OS at ICSI.
+Claudio Fleiner at ICSI had extensively modified it in interesting ways
+to suit their needs there.
+
+I've stripped out Claudio's changes to restore it to its original condition
+because once again I need coroutines, this time on Atmel microcontrollers
+(such as those found on the Arduino). The main reason for this is that
+coroutines would obviate the need for the inevitable state-machine that
+is required to be (badly) implemented whenever anything complicated it
+attempted on that platform.
+
+So far, I've only tested this on Linux/x86: the other architectures probably
+don't compile any more --- if you can even find them still!
