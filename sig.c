@@ -21,17 +21,10 @@
  * Gate, London SW7 2BZ, England.
  */
 
+#include <unistd.h>
 #include <malloc.h>
 #include <sys/types.h>
-#include <sys/time.h>
-#include <signal.h>
 #include "lwp.h"
-
-extern int select(int,fd_set *,fd_set *,fd_set *,struct timeval *);
-extern int getdtablesize(void);
-#ifndef linux
-extern void bzero(char *,int);
-#endif
 
 static struct siginf *info;
 static int w, n;
@@ -75,7 +68,7 @@ int sigioset (int fd, void (*handler) (void *, int), void *context)
 		sigaction (SIGIO, &s, &os);
 	}
 	if (n++ == w)
-		return (-1);
+		return -1;
 	p = (struct siginf *)malloc (sizeof(struct siginf));
 	p->next = info;
 	p->han = handler;
@@ -83,7 +76,7 @@ int sigioset (int fd, void (*handler) (void *, int), void *context)
 	p->ctx = context;
 	info = p;
 	FD_SET(fd, &fds);
-	return (0);
+	return 0;
 }
 
 /*
@@ -96,7 +89,7 @@ int sigioclr (int fd)
 	for (p=info, q=0; p; q=p, p=p->next)
 		if (p->des == fd)
 			break;
-	if (!p) return (-1);
+	if (!p) return -1;
 
 	if (q) q->next = p->next;
 	else info = p->next;
@@ -105,5 +98,5 @@ int sigioclr (int fd)
 	free (p);
 	if (!--n)
 		sigaction (SIGIO, &os, 0);
-	return (0);
+	return 0;
 }

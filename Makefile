@@ -21,7 +21,7 @@ liblwp.a:	$(OBJ) lwp.h
 		$(RANLIB) liblwp.a
 
 clean:
-	rm -f liblwp.a $(OBJ) producer.o timer.o producer timer
+	rm -f liblwp.a $(OBJ) producer.o timer.o producer timer arch.h
 
 bm.o: bm.c lwp.h $(ARCH).h 
 clk.o: clk.c lwp.h $(ARCH).h

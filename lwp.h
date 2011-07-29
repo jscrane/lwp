@@ -47,7 +47,7 @@
 #endif
 #endif
 
-#ifndef _sys_time_h
+#ifndef _SYS_TIME_H
 #include <sys/time.h>
 #endif
 

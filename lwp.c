@@ -21,24 +21,16 @@
  * Gate, London SW7 2BZ, England.
  */
 
-#include <stdio.h>
-#include <stddef.h>
-#include <unistd.h>
-#include <signal.h>
 #include <malloc.h>
-#include <assert.h>
-#include <signal.h>
-#include <syscall.h>
 #include "lwp.h"
 
 extern int sigpause(int);
 extern int sigsetmask(int);
 
-struct lpq schedq[MAXTPRI], deadq;
 struct pcb *currp;
-void (*lwp_sched_func)(void)=NULL;
-int maxpri=0;		/* maximum priority so far */
 
+static struct lpq schedq[MAXTPRI], deadq;
+static int maxpri;		/* maximum priority so far */
 static int oldmask;
 
 /*
@@ -52,14 +44,13 @@ static int growsdown (void *x) { int y; return x > (void *)&y; }
  */
 void reschedp (void)
 {
-	extern struct lpq schedq[];
 	struct pcb *volatile nextp;
 	long i;
 
 	for (i=maxpri+1; i--; )
 		while ((nextp = hoq (&schedq[i])))
 			if (nextp->dead) {
-				if (nextp!=currp) {
+				if (nextp != currp) {
 					free (nextp->sbtm);
 					free (nextp);
 				} else {
@@ -70,8 +61,8 @@ void reschedp (void)
 change:
 	/* change context? ... save current context */
 	if (currp != nextp) {
-		if (currp!=0) {
-			if (savep (currp->context)==0) {
+		if (currp) {
+			if (savep (currp->context) == 0) {
 				/* restore previous context */
 				currp = nextp;
 				restorep (currp->context);
@@ -88,8 +79,6 @@ change:
  */
 void wrapp (void)
 {
-	extern struct pcb *currp;
-
 	sigsetmask (SIGNALS);
 	(*currp->entry) (currp->argc, currp->argv, currp->envp);
 	suicidep ();
@@ -101,27 +90,11 @@ void wrapp (void)
  * reschedule (2) enables signals, waits for one and handles it
  * and (3) resets its priority causing a reschedule.
  */
-struct timeval idle_time;
 static void nullp (void)
 {
-	struct timeval st,en;
-	extern int gettimeofday(struct timeval *,struct timezone *);
 	for (;;) {
 		int p = prisetp (MAXTPRI-1);
-		gettimeofday(&st,NULL);
 		sigpause (oldmask);
-		gettimeofday(&en,NULL);
-		idle_time.tv_sec+=en.tv_sec-st.tv_sec;
-		if (en.tv_usec>=st.tv_usec) {
-			idle_time.tv_usec+=en.tv_usec-st.tv_usec;
-		} else {
-			idle_time.tv_usec+=1000000+en.tv_usec-st.tv_usec;
-			idle_time.tv_sec--;
-		}
-		while(idle_time.tv_usec>=1000000) {
-			idle_time.tv_sec++;
-			idle_time.tv_usec-=1000000;
-		}
 		prisetp (p);
 	}
 }
@@ -134,13 +107,12 @@ struct pcb *creatp (int priority, void (*entry)(), int size, int argc, char *arg
 	struct pcb *newp;
 	int *s, x;
 	void *sp;
-	extern struct pcb *currp;
 
 	if (!(newp = (struct pcb *)calloc (sizeof(struct pcb),1)))
-		return (0);
+		return 0;
 	size += sizeof(stkalign_t);
 	if (!(s = (int *)malloc (size)))
-		return (0);
+		return 0;
 	newp->entry = entry;
 	newp->argc = argc;
 	newp->argv = argv;
@@ -158,7 +130,7 @@ struct pcb *creatp (int priority, void (*entry)(), int size, int argc, char *arg
 	readyp (currp);
 	initp (newp, sp);	/* architecture-dependent: from $(ARCH).c */
 	reschedp ();
-	return (newp);
+	return newp;
 }
 
 /*
@@ -166,9 +138,6 @@ struct pcb *creatp (int priority, void (*entry)(), int size, int argc, char *arg
  */
 void readyp (struct pcb *p)
 {
-	extern struct pcb *currp;
-	extern struct lpq schedq[];
-
 	if (!p)
 		p = currp;
 	toq (&schedq[p->pri], p);
@@ -180,7 +149,7 @@ void readyp (struct pcb *p)
 void *getenvp (struct pcb *p)
 {
 	if (!p) p = currp;
-	return (p->envp);
+	return p->envp;
 }
 
 /*
@@ -230,7 +199,7 @@ int prisetp (int new)
 	currp->pri = new;
 	if (new < old)
 		yieldp ();
-	return (old);
+	return old;
 }
 
 /*
@@ -247,7 +216,7 @@ int prichangep (int new)
 	if (maxpri < new)
 		maxpri = new;
 	currp->pri = new;
-	return (old);
+	return old;
 }
 
 /*
@@ -255,17 +224,15 @@ int prichangep (int new)
  */
 struct pcb *initlp (int pri)
 {
-	extern struct lpq schedq[];
-	extern struct pcb *currp;
 	extern void onalarm ();
 	struct lpq *q;
 	int i, *stack;
 	struct sigaction s;
 
 	if (!(currp = (struct pcb *)calloc (sizeof (struct pcb),1)))
-		return (0);
+		return 0;
 	if (!(stack = (int *)malloc (64)))
-		return (0);
+		return 0;
 	if (MAXTPRI <= pri)
 		pri = MAXTPRI-1;
 	if (maxpri < pri)
@@ -290,5 +257,5 @@ struct pcb *initlp (int pri)
 	oldmask = sigsetmask (SIGNALS);
 
 	creatp (0, nullp, 8192, 0, 0, 0);
-	return (currp);
+	return currp;
 }

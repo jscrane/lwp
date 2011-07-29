@@ -40,7 +40,7 @@ int savep (jmp_buf jb)
 	asm ("sd	$18, 20($4)");
 	asm ("sd	$20, 28($4)");
 	asm ("sd	$22, 36($4)");
-	return (jmpresult);
+	return jmpresult;
 }
 
 void restorep (jmp_buf jb)

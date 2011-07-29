@@ -20,7 +20,6 @@
  * Imperial College of Science, Technology and Medicine, 180 Queen's
  * Gate, London SW7 2BZ, England.
  */
-#include <stdio.h>
 #include <malloc.h>
 #include <assert.h>
 
@@ -34,10 +33,10 @@ struct sem *creats (int count)
 	struct sem *new;
 
 	if (!(new = (struct sem *)malloc (sizeof(struct sem))))
-		return (0);
+		return 0;
 	new->count = count;
 	new->q.head = new->q.tail = 0;
-	return (new);
+	return new;
 }
 
 /*
@@ -49,12 +48,13 @@ void signals (struct sem *s)
 	extern struct pcb *currp;
 	struct pcb *p = hoq (&s->q);
 
-	if (p!=NULL) {
+	if (p) {
 		assert(s->count==0);
 		readyp (p);
 		if (currp->pri < p->pri)
 			yieldp ();
-	} else s->count++;
+	} else
+	  s->count++;
 }
 
 /*
@@ -63,7 +63,7 @@ void signals (struct sem *s)
  */
 int tests(struct sem *s)
 {
-	if(s->count>0) {
+	if (s->count > 0) {
 		s->count--;
 		return 1;
 	} 
@@ -80,6 +80,7 @@ int waits (struct sem *s)
 	if (s->count == 0) {
 		toq (&s->q, currp);
 		reschedp ();
-	} else s->count--;
+	} else
+	  s->count--;
 	return 0;
 }
